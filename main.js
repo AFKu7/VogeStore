@@ -116,3 +116,5 @@ function comprarButtonClicked() {
   shoppingCartItemsContainer.innerHTML = "";
   updateShoppingCartTotal();
 }
+
+function comprarButtonClick() {}
