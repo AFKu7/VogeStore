@@ -1,74 +1,118 @@
-// Creamos un objeto Moto para representar cada tipo de moto.
-class Moto {
-  constructor(tipo, precio) {
-    this.tipo = tipo;
-    this.precio = precio;
-  }
+const addToShoppingCartButtons = document.querySelectorAll(".addToCart");
+addToShoppingCartButtons.forEach((addToCartButton) => {
+  addToCartButton.addEventListener("click", addToCartClicked);
+});
+
+const comprarButton = document.querySelector(".comprarButton");
+comprarButton.addEventListener("click", comprarButtonClicked);
+
+const shoppingCartItemsContainer = document.querySelector(
+  ".shoppingCartItemsContainer"
+);
+
+function addToCartClicked(event) {
+  const button = event.target;
+  const item = button.closest(".item");
+
+  const itemTitle = item.querySelector(".item-title").textContent;
+  const itemPrice = item.querySelector(".item-price").textContent;
+  const itemImage = item.querySelector(".item-image").src;
+
+  addItemToShoppingCart(itemTitle, itemPrice, itemImage);
 }
 
-// Creamos el catálogo de motos disponibles.
-const catalogoMotos = [
-  new Moto("deportiva", 5000),
-  new Moto("cruiser", 4000),
-  new Moto("calle", 3000),
-  // Puedes agregar más modelos aquí si lo deseas.
-];
-
-const validarCantidad = (cantidad) => {
-  while (Number.isNaN(cantidad) || cantidad <= 0) {
-    alert("Debe ingresar una cantidad válida");
-    cantidad = parseFloat(prompt("¿Cuántas deseas comprar?"));
+function addItemToShoppingCart(itemTitle, itemPrice, itemImage) {
+  const elementsTitle = shoppingCartItemsContainer.getElementsByClassName(
+    "shoppingCartItemTitle"
+  );
+  for (let i = 0; i < elementsTitle.length; i++) {
+    if (elementsTitle[i].innerText === itemTitle) {
+      let elementQuantity = elementsTitle[
+        i
+      ].parentElement.parentElement.parentElement.querySelector(
+        ".shoppingCartItemQuantity"
+      );
+      elementQuantity.value++;
+      $(".toast").toast("show");
+      updateShoppingCartTotal();
+      return;
+    }
   }
 
-  return cantidad;
-};
+  const shoppingCartRow = document.createElement("div");
+  const shoppingCartContent = `
+  <div class="row shoppingCartItem">
+        <div class="col-6">
+            <div class="shopping-cart-item d-flex align-items-center h-100 border-bottom pb-2 pt-3">
+                <img src=${itemImage} class="shopping-cart-image">
+                <h6 class="shopping-cart-item-title shoppingCartItemTitle text-truncate ml-3 mb-0">${itemTitle}</h6>
+            </div>
+        </div>
+        <div class="col-2">
+            <div class="shopping-cart-price d-flex align-items-center h-100 border-bottom pb-2 pt-3">
+                <p class="item-price mb-0 shoppingCartItemPrice">${itemPrice}</p>
+            </div>
+        </div>
+        <div class="col-4">
+            <div
+                class="shopping-cart-quantity d-flex justify-content-between align-items-center h-100 border-bottom pb-2 pt-3">
+                <input class="shopping-cart-quantity-input shoppingCartItemQuantity" type="number"
+                    value="1">
+                <button class="btn btn-danger buttonDelete" type="button">X</button>
+            </div>
+        </div>
+    </div>`;
+  shoppingCartRow.innerHTML = shoppingCartContent;
+  shoppingCartItemsContainer.append(shoppingCartRow);
 
-const comprarMotos = () => {
-  let subtotal = 0;
-  let seguirComprando;
+  shoppingCartRow
+    .querySelector(".buttonDelete")
+    .addEventListener("click", removeShoppingCartItem);
 
-  do {
-    let opcionesMotos = "Opciones de Motos Disponibles:\n";
-    catalogoMotos.forEach((moto) => {
-      opcionesMotos += `${moto.tipo} - Precio: ${moto.precio} dólares\n`;
-    });
+  shoppingCartRow
+    .querySelector(".shoppingCartItemQuantity")
+    .addEventListener("change", quantityChanged);
 
-    let moto = prompt(
-      `¿Qué tipo de moto deseas comprar?\n${opcionesMotos}\nIngresa 'cancelar' para finalizar la compra.`
+  updateShoppingCartTotal();
+}
+
+function updateShoppingCartTotal() {
+  let total = 0;
+  const shoppingCartTotal = document.querySelector(".shoppingCartTotal");
+
+  const shoppingCartItems = document.querySelectorAll(".shoppingCartItem");
+
+  shoppingCartItems.forEach((shoppingCartItem) => {
+    const shoppingCartItemPriceElement = shoppingCartItem.querySelector(
+      ".shoppingCartItemPrice"
     );
+    const shoppingCartItemPrice = Number(
+      shoppingCartItemPriceElement.textContent.replace("€", "")
+    );
+    const shoppingCartItemQuantityElement = shoppingCartItem.querySelector(
+      ".shoppingCartItemQuantity"
+    );
+    const shoppingCartItemQuantity = Number(
+      shoppingCartItemQuantityElement.value
+    );
+    total = total + shoppingCartItemPrice * shoppingCartItemQuantity;
+  });
+  shoppingCartTotal.innerHTML = `${total.toFixed(2)}€`;
+}
 
-    if (!moto || moto.toLowerCase() === "cancelar") {
-      seguirComprando = false;
-    } else {
-      // Buscamos la moto seleccionada en el catálogo.
-      const motoSeleccionada = catalogoMotos.find(
-        (motoObj) => motoObj.tipo === moto.toLowerCase()
-      );
+function removeShoppingCartItem(event) {
+  const buttonClicked = event.target;
+  buttonClicked.closest(".shoppingCartItem").remove();
+  updateShoppingCartTotal();
+}
 
-      if (motoSeleccionada) {
-        alert(
-          `Has seleccionado: ${motoSeleccionada.tipo} - Precio: ${motoSeleccionada.precio} dólares`
-        );
+function quantityChanged(event) {
+  const input = event.target;
+  input.value <= 0 ? (input.value = 1) : null;
+  updateShoppingCartTotal();
+}
 
-        let cantidad = parseFloat(prompt("¿Cuántas deseas comprar?"));
-        cantidad = validarCantidad(cantidad);
-
-        subtotal += motoSeleccionada.precio * cantidad;
-      } else {
-        alert("Opción inválida. Por favor, elige una opción válida.");
-      }
-
-      seguirComprando = confirm("¿Deseas seguir comprando motos?");
-    }
-  } while (seguirComprando);
-
-  return subtotal;
-};
-
-let total = comprarMotos();
-
-if (!isNaN(total) && total > 0) {
-  alert("Gracias por tu compra. El total de tu compra es: " + total);
-} else {
-  alert("No se realizó ninguna compra.");
+function comprarButtonClicked() {
+  shoppingCartItemsContainer.innerHTML = "";
+  updateShoppingCartTotal();
 }
